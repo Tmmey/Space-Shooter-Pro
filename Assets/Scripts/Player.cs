@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
@@ -25,6 +26,8 @@ public class Player : MonoBehaviour
     private SpawnManager _spawnManager;
     private UIManager _uiManager;
     private AudioSource _audioSource;
+
+    Vector2 _rawInput;
 
 
     // Start is called before the first frame update
@@ -55,40 +58,55 @@ public class Player : MonoBehaviour
         {
             _audioSource.clip = _laserAudioClip;
         }
-
-        // _shieldSprite = (GetComponentsInChildren<SpriteRenderer>()).FirstOrDefault(x => x.tag == "Shield");
-
-        // if (_shieldSprite != null)
-        // {
-        //     Debug.Log("Found shieldsprite");
-        // }
-        // else
-        // {
-        //     Debug.Log("Not found shieldsprite");
-        // }
     }
 
     // Update is called once per frame
     void Update()
     {
+        //fire, restart, josystick goes here
+        #if UNITY_ANDROID
+
+        #endif
+
         CalculateMovement();
-        FireLaser();
+        //FireLaser();
+    }
+
+    void OnMove(InputValue value)
+    {
+        _rawInput = value.Get<Vector2>();
+    }
+
+    void OnFire()
+    {
+        _canFire = Time.time + _fireRate;
+
+        if (_isTripleShotActive)
+        {
+            Instantiate(_tripleShotLaserPrefab, transform.position, Quaternion.identity);
+        }
+        else
+        {
+            Instantiate(_laserPrefab, transform.position + new Vector3(0, _offset, 0), Quaternion.identity);
+        }
+
+        _audioSource.Play();
     }
 
     void CalculateMovement()
     {
-        float horizontalInput = Input.GetAxis("Horizontal");
-        float verticalInput = Input.GetAxis("Vertical");
+        //float horizontalInput = Input.GetAxis("Horizontal");
+        //float verticalInput = Input.GetAxis("Vertical");
 
-        Vector3 direction = new Vector3(horizontalInput, verticalInput, 0);
+        //Vector3 direction = new Vector3(horizontalInput, verticalInput, 0);
 
         if (_isSpeedActive)
         {
-            transform.Translate(direction * _speed * _speedMultiplier * Time.deltaTime);
+            transform.Translate(_rawInput * _speed * _speedMultiplier * Time.deltaTime);
         }
         else
         {
-            transform.Translate(direction * _speed * Time.deltaTime);
+            transform.Translate(_rawInput * _speed * Time.deltaTime);
         }
 
         transform.position = new Vector3(transform.position.x, Mathf.Clamp(transform.position.y, -3.8f, 0), 0);
@@ -103,26 +121,24 @@ public class Player : MonoBehaviour
         }
     }
 
-    void FireLaser()
-    {
-        if (Input.GetKeyDown(KeyCode.Space) && Time.time > _canFire)
-        {
-            _canFire = Time.time + _fireRate;
+    //void FireLaser()
+    //{
+    //    if (Input.GetKeyDown(KeyCode.Space) && Time.time > _canFire)
+    //    {
+    //        _canFire = Time.time + _fireRate;
 
-            if (_isTripleShotActive)
-            {
-                Instantiate(_tripleShotLaserPrefab, transform.position, Quaternion.identity);
-            }
-            else
-            {
-                Instantiate(_laserPrefab, transform.position + new Vector3(0, _offset, 0), Quaternion.identity);
-            }
+    //        if (_isTripleShotActive)
+    //        {
+    //            Instantiate(_tripleShotLaserPrefab, transform.position, Quaternion.identity);
+    //        }
+    //        else
+    //        {
+    //            Instantiate(_laserPrefab, transform.position + new Vector3(0, _offset, 0), Quaternion.identity);
+    //        }
 
-            _audioSource.Play();
-        }
-    }
-
-
+    //        _audioSource.Play();
+    //    }
+    //}
 
     public void Damage(int amount)
     {
